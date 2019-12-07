@@ -9,8 +9,6 @@ from time import sleep
 from random import randint,choice
 from pygame import mixer
 
-mixer.init()
-
 class Obstacle:
     
     def __init__(self,canvas,color,height):
@@ -31,7 +29,7 @@ class Obstacle:
         color = choice(self.color)
         height = randint(100,300)
         position = randint(0,600-height)
-        self.id=canvas.create_rectangle(x,position,x+50,position+height,fill=color)   
+        self.id=self.canvas.create_rectangle(x,position,x+50,position+height,fill=color)   
         self.obstacles.append(self.id)
         
     def draw(self):
@@ -83,6 +81,7 @@ class Ball:
         self.canvas.bind_all('<KeyPress>',self.key_pressed)
         self.state=True
         self.collide = False
+        self.log = log
         
     def key_pressed(self,event):
         key = event.keysym
@@ -93,20 +92,24 @@ class Ball:
             if (key == "Up" or key == "space") and pos[1]>25:
                 self.x = 0
                 self.y = -10
-            if key == "Down" and pos[3]<575:
+            elif key == "Down" and pos[3]<575:
                 self.x = 0
                 self.y = 10
-            if key == "Right" and pos[2]<600:
+            elif key == "Right" and pos[2]<600:
                 self.x = 10
                 self.y = 0
-            if key == "Left" and pos[0]>0:
+            elif key == "Left" and pos[0]>0:
                 self.x = -10
                 self.y = 0
+
+            # elif key == "enter":
+            #     self.pause = True
+
             self.canvas.move(self.id,self.x,self.y)
             
     def check(self):
         posheli  = self.canvas.bbox(self.id)
-        for obs in log.obstacles:
+        for obs in self.log.obstacles:
             self.pos=self.canvas.coords(obs)
             self.check_collision()
         if posheli[1]<=25 or posheli[3]>=575:
@@ -143,7 +146,7 @@ class Ball:
         mixer.music.play(1,1)
         self.text=self.canvas.create_text(200,200,text="Game Over",font=("times",30))
         tk.update()
-        ball.state=False
+        self.state=False
         self.game_over=True
         
 class Scorebox:
@@ -169,24 +172,23 @@ def thorn(canvas):
         x+=30
 
 
-mixer.music.load('sound/fly.ogg')
-mixer.music.play(-1,0.0)
-
 tk=Tk()
 tk.title("Heli Fly")
 canvas=Canvas(tk,width=600,height=600)
 canvas.pack()
 tk.update()
 
+def main():
+    mixer.init()
+    mixer.music.load('sound/fly.ogg')
+    mixer.music.play(-1,0.0)
 
+    log=Obstacle(canvas,"green",250)
+    ball=Ball(canvas,"red",log)
+    score=Scorebox(canvas,"gray")
+    thorn(canvas)
 
-log=Obstacle(canvas,"green",250)
-ball=Ball(canvas,"red",log)
-score=Scorebox(canvas,"gray")
-thorn(canvas)
-
-try:
-    while 1:
+    while True:
         if log.game_over==False and ball.state==True:
             log.draw()
             ball.check()
@@ -206,8 +208,14 @@ try:
                 if pos>=600:
                     break
             break
+
+    canvas.delete('all')
+    sleep(2)
+    main()
+    tk.mainloop()  
+
+
+try:
+    main()
 except TclError:
-    print("Game Closed")
-
-tk.mainloop()    
-
+    print('Game Closed')
